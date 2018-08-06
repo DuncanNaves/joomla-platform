@@ -3,35 +3,30 @@
  * @package     Joomla.Site
  * @subpackage  com_content
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 defined('_JEXEC') or die;
 
-JLoader::register('ContentHelperRoute', JPATH_SITE . '/components/com_content/helpers/route.php');
-JLoader::register('ContentHelperQuery', JPATH_SITE . '/components/com_content/helpers/query.php');
-JLoader::register('ContentHelperAssociation', JPATH_SITE . '/components/com_content/helpers/association.php');
+require_once JPATH_COMPONENT . '/helpers/route.php';
+require_once JPATH_COMPONENT . '/helpers/query.php';
 
 $input = JFactory::getApplication()->input;
 $user  = JFactory::getUser();
 
-$checkCreateEdit = ($input->get('view') === 'articles' && $input->get('layout') === 'modal')
-	|| ($input->get('view') === 'article' && $input->get('layout') === 'pagebreak');
-
-if ($checkCreateEdit)
+if ($input->get('view') === 'article' && $input->get('layout') === 'pagebreak')
 {
-	// Can create in any category (component permission) or at least in one category
-	$canCreateRecords = $user->authorise('core.create', 'com_content')
-		|| count($user->getAuthorisedCategories('com_content', 'core.create')) > 0;
+	if (!$user->authorise('core.edit', 'com_content'))
+	{
+		JFactory::getApplication()->enqueueMessage(JText::_('JERROR_ALERTNOAUTHOR'), 'warning');
 
-	// Instead of checking edit on all records, we can use **same** check as the form editing view
-	$values = (array) JFactory::getApplication()->getUserState('com_content.edit.article.id');
-	$isEditingRecords = count($values);
-
-	$hasAccess = $canCreateRecords || $isEditingRecords;
-
-	if (!$hasAccess)
+		return;
+	}
+}
+elseif ($input->get('view') === 'articles' && $input->get('layout') === 'modal')
+{
+	if (!$user->authorise('core.edit', 'com_content'))
 	{
 		JFactory::getApplication()->enqueueMessage(JText::_('JERROR_ALERTNOAUTHOR'), 'warning');
 
@@ -40,5 +35,5 @@ if ($checkCreateEdit)
 }
 
 $controller = JControllerLegacy::getInstance('Content');
-$controller->execute(JFactory::getApplication()->input->get('task'));
+$controller->execute($input->get('task'));
 $controller->redirect();

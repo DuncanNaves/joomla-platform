@@ -3,7 +3,7 @@
  * @package     Joomla.Administrator
  * @subpackage  com_cache
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -54,7 +54,7 @@ class CacheModelCache extends JModelList
 				'group',
 				'count',
 				'size',
-				'client_id',
+				'cliend_id',
 			);
 		}
 
@@ -117,55 +117,42 @@ class CacheModelCache extends JModelList
 	{
 		if (empty($this->_data))
 		{
-			try
-			{
-				$cache = $this->getCache();
-				$data  = $cache->getAll();
+			$cache = $this->getCache();
+			$data  = $cache->getAll();
 
-				if ($data && count($data) > 0)
+			if ($data && count($data) > 0)
+			{
+				// Process filter by search term.
+				if ($search = $this->getState('filter.search'))
 				{
-					// Process filter by search term.
-					if ($search = $this->getState('filter.search'))
+					foreach ($data as $key => $cacheItem)
 					{
-						foreach ($data as $key => $cacheItem)
+						if (stripos($cacheItem->group, $search) === false)
 						{
-							if (stripos($cacheItem->group, $search) === false)
-							{
-								unset($data[$key]);
-								continue;
-							}
+							unset($data[$key]);
+							continue;
 						}
 					}
-
-					// Process ordering.
-					$listOrder = $this->getState('list.ordering', 'group');
-					$listDirn  = $this->getState('list.direction', 'ASC');
-
-					$this->_data = ArrayHelper::sortObjects($data, $listOrder, strtolower($listDirn) === 'desc' ? -1 : 1, true, true);
-
-					// Process pagination.
-					$limit = (int) $this->getState('list.limit', 25);
-
-					if ($limit !== 0)
-					{
-						$start = (int) $this->getState('list.start', 0);
-
-						return array_slice($this->_data, $start, $limit);
-					}
 				}
-				else
+
+				// Process ordering.
+				$listOrder = $this->getState('list.ordering', 'group');
+				$listDirn  = $this->getState('list.direction', 'ASC');
+
+				$this->_data = ArrayHelper::sortObjects($data, $listOrder, strtolower($listDirn) === 'desc' ? -1 : 1, true, true);
+
+				// Process pagination.
+				$limit = (int) $this->getState('list.limit', 25);
+
+				if ($limit !== 0)
 				{
-					$this->_data = array();
+					$start = (int) $this->getState('list.start', 0);
+
+					return array_slice($this->_data, $start, $limit);
 				}
 			}
-			catch (JCacheExceptionConnecting $exception)
+			else
 			{
-				$this->setError(JText::_('COM_CACHE_ERROR_CACHE_CONNECTION_FAILED'));
-				$this->_data = array();
-			}
-			catch (JCacheExceptionUnsupported $exception)
-			{
-				$this->setError(JText::_('COM_CACHE_ERROR_CACHE_DRIVER_UNSUPPORTED'));
 				$this->_data = array();
 			}
 		}
@@ -176,25 +163,22 @@ class CacheModelCache extends JModelList
 	/**
 	 * Method to get cache instance.
 	 *
-	 * @return JCacheController
+	 * @return object
 	 */
-	public function getCache($clientId = null)
+	public function getCache()
 	{
 		$conf = JFactory::getConfig();
-
-		if (is_null($clientId))
-		{
-			$clientId = $this->getState('client_id');
-		}
 
 		$options = array(
 			'defaultgroup' => '',
 			'storage'      => $conf->get('cache_handler', ''),
 			'caching'      => true,
-			'cachebase'    => (int) $clientId === 1 ? JPATH_ADMINISTRATOR . '/cache' : $conf->get('cache_path', JPATH_SITE . '/cache')
+			'cachebase'    => ($this->getState('client_id') === 1) ? JPATH_ADMINISTRATOR . '/cache' : $conf->get('cache_path', JPATH_SITE . '/cache')
 		);
 
-		return JCache::getInstance('', $options);
+		$cache = JCache::getInstance('', $options);
+
+		return $cache;
 	}
 
 	/**
@@ -227,7 +211,7 @@ class CacheModelCache extends JModelList
 	/**
 	 * Method to get a pagination object for the cache.
 	 *
-	 * @return  JPagination
+	 * @return  integer
 	 */
 	public function getPagination()
 	{
@@ -249,18 +233,7 @@ class CacheModelCache extends JModelList
 	 */
 	public function clean($group = '')
 	{
-		try
-		{
-			return $this->getCache()->clean($group);
-		}
-		catch (JCacheExceptionConnecting $exception)
-		{
-			return false;
-		}
-		catch (JCacheExceptionUnsupported $exception)
-		{
-			return false;
-		}
+		return $this->getCache()->clean($group);
 	}
 
 	/**
@@ -292,17 +265,6 @@ class CacheModelCache extends JModelList
 	 */
 	public function purge()
 	{
-		try
-		{
-			return JFactory::getCache('')->gc();
-		}
-		catch (JCacheExceptionConnecting $exception)
-		{
-			return false;
-		}
-		catch (JCacheExceptionUnsupported $exception)
-		{
-			return false;
-		}
+		return JFactory::getCache('')->gc();
 	}
 }

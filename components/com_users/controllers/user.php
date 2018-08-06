@@ -3,13 +3,13 @@
  * @package     Joomla.Site
  * @subpackage  com_users
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 defined('_JEXEC') or die;
 
-JLoader::register('UsersController', JPATH_COMPONENT . '/controller.php');
+require_once JPATH_COMPONENT . '/controller.php';
 
 /**
  * Registration controller class for Users.
@@ -27,24 +27,26 @@ class UsersControllerUser extends UsersController
 	 */
 	public function login()
 	{
-		$this->checkToken('post');
+		JSession::checkToken('post') or jexit(JText::_('JINVALID_TOKEN'));
 
-		$app   = JFactory::getApplication();
-		$input = $app->input->getInputForRequestMethod();
+		$app    = JFactory::getApplication();
+		$input  = $app->input;
+		$method = $input->getMethod();
 
 		// Populate the data array:
 		$data = array();
 
-		$data['return']    = base64_decode($input->get('return', '', 'BASE64'));
-		$data['username']  = $input->get('username', '', 'USERNAME');
-		$data['password']  = $input->get('password', '', 'RAW');
-		$data['secretkey'] = $input->get('secretkey', '', 'RAW');
+		$data['return']    = base64_decode($app->input->post->get('return', '', 'BASE64'));
+		$data['username']  = $input->$method->get('username', '', 'USERNAME');
+		$data['password']  = $input->$method->get('password', '', 'RAW');
+		$data['secretkey'] = $input->$method->get('secretkey', '', 'RAW');
 
 		// Check for a simple menu item id
 		if (is_numeric($data['return']))
 		{
 			if (JLanguageMultilang::isEnabled())
 			{
+
 				$db = JFactory::getDbo();
 				$query = $db->getQuery(true)
 					->select('language')
@@ -140,18 +142,14 @@ class UsersControllerUser extends UsersController
 	 */
 	public function logout()
 	{
-		$this->checkToken('request');
+		JSession::checkToken('request') or jexit(JText::_('JINVALID_TOKEN'));
 
 		$app = JFactory::getApplication();
 
-		// Prepare the logout options.
-		$options = array(
-			'clientid' => $app->get('shared_session', '0') ? null : 0,
-		);
-
 		// Perform the log out.
-		$error = $app->logout(null, $options);
-		$input = $app->input->getInputForRequestMethod();
+		$error  = $app->logout();
+		$input  = $app->input;
+		$method = $input->getMethod();
 
 		// Check if the log out succeeded.
 		if ($error instanceof Exception)
@@ -159,8 +157,8 @@ class UsersControllerUser extends UsersController
 			$app->redirect(JRoute::_('index.php?option=com_users&view=login', false));
 		}
 
-		// Get the return URL from the request and validate that it is internal.
-		$return = $input->get('return', '', 'BASE64');
+		// Get the return url from the request and validate that it is internal.
+		$return = $input->$method->get('return', '', 'BASE64');
 		$return = base64_decode($return);
 
 		// Check for a simple menu item id
@@ -168,6 +166,7 @@ class UsersControllerUser extends UsersController
 		{
 			if (JLanguageMultilang::isEnabled())
 			{
+
 				$db = JFactory::getDbo();
 				$query = $db->getQuery(true)
 					->select('language')
@@ -211,12 +210,6 @@ class UsersControllerUser extends UsersController
 			}
 		}
 
-		// In case redirect url is not set, redirect user to homepage
-		if (empty($return))
-		{
-			$return = JUri::root();
-		}
-
 		// Redirect the user.
 		$app->redirect(JRoute::_($return, false));
 	}
@@ -224,7 +217,7 @@ class UsersControllerUser extends UsersController
 	/**
 	 * Method to logout directly and redirect to page.
 	 *
-	 * @return  void
+	 * @return  boolean
 	 *
 	 * @since   3.5
 	 */
@@ -291,7 +284,88 @@ class UsersControllerUser extends UsersController
 	}
 
 	/**
-	 * Method to request a username reminder.
+	 * Method to register a user.
+	 *
+	 * @return  boolean
+	 *
+	 * @since   1.6
+	 */
+	public function register()
+	{
+		JSession::checkToken('post') or jexit(JText::_('JINVALID_TOKEN'));
+
+		// Get the application
+		$app = JFactory::getApplication();
+
+		// Get the form data.
+		$data = $this->input->post->get('user', array(), 'array');
+
+		// Get the model and validate the data.
+		$model  = $this->getModel('Registration', 'UsersModel');
+
+		$form = $model->getForm();
+
+		if (!$form)
+		{
+			JError::raiseError(500, $model->getError());
+
+			return false;
+		}
+
+		$return = $model->validate($form, $data);
+
+		// Check for errors.
+		if ($return === false)
+		{
+			// Get the validation messages.
+			$errors = $model->getErrors();
+
+			// Push up to three validation messages out to the user.
+			for ($i = 0, $n = count($errors); $i < $n && $i < 3; $i++)
+			{
+				if ($errors[$i] instanceof Exception)
+				{
+					$app->enqueueMessage($errors[$i]->getMessage(), 'notice');
+
+					continue;
+				}
+
+				$app->enqueueMessage($errors[$i], 'notice');
+			}
+
+			// Save the data in the session.
+			$app->setUserState('users.registration.form.data', $data);
+
+			// Redirect back to the registration form.
+			$this->setRedirect('index.php?option=com_users&view=registration');
+
+			return false;
+		}
+
+		// Finish the registration.
+		$return = $model->register($data);
+
+		// Check for errors.
+		if ($return === false)
+		{
+			// Save the data in the session.
+			$app->setUserState('users.registration.form.data', $data);
+
+			// Redirect back to the registration form.
+			$message = JText::sprintf('COM_USERS_REGISTRATION_SAVE_FAILED', $model->getError());
+			$this->setRedirect('index.php?option=com_users&view=registration', $message, 'error');
+
+			return false;
+		}
+
+		// Flush the data from the session.
+		$app->setUserState('users.registration.form.data', null);
+
+		return true;
+	}
+
+	/**
+	 * Method to login a user.
 	 *
 	 * @return  boolean
 	 *
@@ -300,7 +374,7 @@ class UsersControllerUser extends UsersController
 	public function remind()
 	{
 		// Check the request token.
-		$this->checkToken('post');
+		JSession::checkToken('post') or jexit(JText::_('JINVALID_TOKEN'));
 
 		$app   = JFactory::getApplication();
 		$model = $this->getModel('User', 'UsersModel');
@@ -357,7 +431,7 @@ class UsersControllerUser extends UsersController
 	}
 
 	/**
-	 * Method to resend a user.
+	 * Method to login a user.
 	 *
 	 * @return  void
 	 *
@@ -366,6 +440,6 @@ class UsersControllerUser extends UsersController
 	public function resend()
 	{
 		// Check for request forgeries
-		// $this->checkToken('post');
+		JSession::checkToken('post') or jexit(JText::_('JINVALID_TOKEN'));
 	}
 }

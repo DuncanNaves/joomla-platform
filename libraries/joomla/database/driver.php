@@ -3,7 +3,7 @@
  * @package     Joomla.Platform
  * @subpackage  Database
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -14,8 +14,8 @@ defined('JPATH_PLATFORM') or die;
  *
  * @since  12.1
  *
- * @method   string|array  q()   q($text, $escape = true)  Alias for quote method
- * @method   string|array  qn()  qn($name, $as = null)     Alias for quoteName method
+ * @method      string  q()   q($text, $escape = true)  Alias for quote method
+ * @method      string  qn()  qn($name, $as = null)     Alias for quoteName method
  */
 abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 {
@@ -121,7 +121,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	protected $options;
 
 	/**
-	 * @var    JDatabaseQuery|string  The current SQL statement to execute.
+	 * @var    mixed  The current SQL statement to execute.
 	 * @since  11.1
 	 */
 	protected $sql;
@@ -205,6 +205,12 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 
 			// Only load for php files.
 			if (!$file->isFile() || $file->getExtension() != 'php')
+			{
+				continue;
+			}
+
+			// Block the ext/mysql driver for PHP 7
+			if ($fileName === 'mysql.php' && PHP_MAJOR_VERSION >= 7)
 			{
 				continue;
 			}
@@ -441,6 +447,8 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 				$query = '';
 				$start = $i + 1;
 			}
+
+			$endComment = false;
 		}
 
 		return $queries;
@@ -662,16 +670,6 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	}
 
 	/**
-	 * Destructor.
-	 *
-	 * @since   3.8.0
-	 */
-	public function __destruct()
-	{
-		$this->disconnect();
-	}
-
-	/**
 	 * Disconnects the database.
 	 *
 	 * @return  void
@@ -705,7 +703,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	 * @since   11.4
 	 * @throws  RuntimeException
 	 */
-	abstract public function dropTable($table, $ifExists = true);
+	public abstract function dropTable($table, $ifExists = true);
 
 	/**
 	 * Escapes a string for usage in an SQL statement.
@@ -1283,16 +1281,16 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	abstract public function getTableCreate($tables);
 
 	/**
-	 * Retrieves keys information about the given table.
+	 * Retrieves field information about the given tables.
 	 *
-	 * @param   string  $table  The name of the table.
+	 * @param   mixed  $tables  A table name or a list of table names.
 	 *
-	 * @return  array   An array of keys for the table.
+	 * @return  array  An array of keys for the table(s).
 	 *
 	 * @since   11.1
 	 * @throws  RuntimeException
 	 */
-	abstract public function getTableKeys($table);
+	abstract public function getTableKeys($tables);
 
 	/**
 	 * Method to get an array of all tables in the database.
@@ -1454,7 +1452,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get the first row from the result set as an associative array.
@@ -1495,7 +1493,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get all of the rows from the result set.
@@ -1539,7 +1537,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get all of the rows from the result set as arrays.
@@ -1573,7 +1571,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		static $cursor = null;
 
 		// Execute the query and get the result set cursor.
-		if (is_null($cursor))
+		if ( is_null($cursor) )
 		{
 			if (!($cursor = $this->execute()))
 			{
@@ -1611,7 +1609,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		static $cursor = null;
 
 		// Execute the query and get the result set cursor.
-		if (is_null($cursor))
+		if ( is_null($cursor) )
 		{
 			if (!($cursor = $this->execute()))
 			{
@@ -1651,7 +1649,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get the first row from the result set as an object of type $class.
@@ -1690,7 +1688,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get all of the rows from the result set as objects of type $class.
@@ -1729,7 +1727,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get the first row from the result set as an array.
@@ -1762,7 +1760,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get the first row from the result set as an array.
@@ -1784,14 +1782,14 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	 * NOTE: Choosing to key the result array by a non-unique field can result in unwanted
 	 * behavior and should be avoided.
 	 *
-	 * @param   integer  $index  The index of a field on which to key the result array.
+	 * @param   string  $key  The name of a field on which to key the result array.
 	 *
 	 * @return  mixed   The return value or null if the query failed.
 	 *
 	 * @since   11.1
 	 * @throws  RuntimeException
 	 */
-	public function loadRowList($index = null)
+	public function loadRowList($key = null)
 	{
 		$this->connect();
 
@@ -1800,15 +1798,15 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		// Execute the query and get the result set cursor.
 		if (!($cursor = $this->execute()))
 		{
-			return;
+			return null;
 		}
 
 		// Get all of the rows from the result set as arrays.
 		while ($row = $this->fetchArray($cursor))
 		{
-			if ($index !== null)
+			if ($key !== null)
 			{
-				$array[$row[$index]] = $row;
+				$array[$row[$key]] = $row;
 			}
 			else
 			{
@@ -1832,7 +1830,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	 * @since   11.4
 	 * @throws  RuntimeException
 	 */
-	abstract public function lockTable($tableName);
+	public abstract function lockTable($tableName);
 
 	/**
 	 * Quotes and optionally escapes a string to database requirements for use in database queries.
@@ -1840,7 +1838,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	 * @param   mixed    $text    A string or an array of strings to quote.
 	 * @param   boolean  $escape  True (default) to escape the string, false to leave it unchanged.
 	 *
-	 * @return  string|array  The quoted input.
+	 * @return  string  The quoted input string.
 	 *
 	 * @note    Accepting an array of strings was added in 12.3.
 	 * @since   11.1
@@ -1939,11 +1937,11 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 
 			if (strlen($q) == 1)
 			{
-				$parts[] = $q . str_replace($q, $q . $q, $part) . $q;
+				$parts[] = $q . $part . $q;
 			}
 			else
 			{
-				$parts[] = $q{0} . str_replace($q{1}, $q{1} . $q{1}, $part) . $q{1};
+				$parts[] = $q{0} . $part . $q{1};
 			}
 		}
 
@@ -2065,7 +2063,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	 * @since   11.4
 	 * @throws  RuntimeException
 	 */
-	abstract public function renameTable($oldTable, $newTable, $backup = null, $prefix = null);
+	public abstract function renameTable($oldTable, $newTable, $backup = null, $prefix = null);
 
 	/**
 	 * Select a database for use.
@@ -2230,7 +2228,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		foreach (get_object_vars($object) as $k => $v)
 		{
 			// Only process scalars that are not internal fields.
-			if (is_array($v) || is_object($v) || $k[0] === '_')
+			if (is_array($v) or is_object($v) or $k[0] == '_')
 			{
 				continue;
 			}
@@ -2238,7 +2236,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 			// Set the primary key to the WHERE clause instead of a field to update.
 			if (in_array($k, $key))
 			{
-				$where[] = $this->quoteName($k) . ($v === null ? ' IS NULL' : ' = ' . $this->quote($v));
+				$where[] = $this->quoteName($k) . '=' . $this->quote($v);
 				continue;
 			}
 
@@ -2273,7 +2271,7 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 		}
 
 		// Set the query and execute the update.
-		$this->setQuery(sprintf($statement, implode(',', $fields), implode(' AND ', $where)));
+		$this->setQuery(sprintf($statement, implode(",", $fields), implode(' AND ', $where)));
 
 		return $this->execute();
 	}
@@ -2296,5 +2294,5 @@ abstract class JDatabaseDriver extends JDatabase implements JDatabaseInterface
 	 * @since   11.4
 	 * @throws  RuntimeException
 	 */
-	abstract public function unlockTables();
+	public abstract function unlockTables();
 }

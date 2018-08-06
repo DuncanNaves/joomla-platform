@@ -2,7 +2,7 @@
 /**
  * Part of the Joomla Framework Filter Package
  *
- * @copyright  Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright  Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license    GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -24,15 +24,15 @@ class OutputFilter
 	 * Object parameters that are non-string, array, object or start with underscore
 	 * will be converted
 	 *
-	 * @param   object   $mixed        An object to be parsed
-	 * @param   integer  $quoteStyle   The optional quote style for the htmlspecialchars function
-	 * @param   mixed    $excludeKeys  An optional string single field name or array of field names not to be parsed (eg, for a textarea)
+	 * @param   object   &$mixed        An object to be parsed
+	 * @param   integer  $quote_style   The optional quote style for the htmlspecialchars function
+	 * @param   mixed    $exclude_keys  An optional string single field name or array of field names not to be parsed (eg, for a textarea)
 	 *
 	 * @return  void
 	 *
 	 * @since   1.0
 	 */
-	public static function objectHtmlSafe(&$mixed, $quoteStyle = ENT_QUOTES, $excludeKeys = '')
+	public static function objectHtmlSafe(&$mixed, $quote_style = ENT_QUOTES, $exclude_keys = '')
 	{
 		if (is_object($mixed))
 		{
@@ -43,16 +43,16 @@ class OutputFilter
 					continue;
 				}
 
-				if (is_string($excludeKeys) && $k == $excludeKeys)
+				if (is_string($exclude_keys) && $k == $exclude_keys)
 				{
 					continue;
 				}
-				elseif (is_array($excludeKeys) && in_array($k, $excludeKeys))
+				elseif (is_array($exclude_keys) && in_array($k, $exclude_keys))
 				{
 					continue;
 				}
 
-				$mixed->$k = htmlspecialchars($v, $quoteStyle, 'UTF-8');
+				$mixed->$k = htmlspecialchars($v, $quote_style, 'UTF-8');
 			}
 		}
 	}
@@ -72,7 +72,7 @@ class OutputFilter
 
 		return preg_replace_callback(
 			"#$regex#i",
-			function ($m)
+			function($m)
 			{
 				return preg_replace('#&(?!amp;)#', '&amp;', $m[0]);
 			},
@@ -84,21 +84,18 @@ class OutputFilter
 	 * This method processes a string and replaces all accented UTF-8 characters by unaccented
 	 * ASCII-7 "equivalents", whitespaces are replaced by hyphens and the string is lowercase.
 	 *
-	 * @param   string  $string    String to process
-	 * @param   string  $language  Language to transliterate to
+	 * @param   string  $string  String to process
 	 *
 	 * @return  string  Processed string
 	 *
 	 * @since   1.0
 	 */
-	public static function stringUrlSafe($string, $language = '')
+	public static function stringUrlSafe($string)
 	{
 		// Remove any '-' from the string since they will be used as concatenaters
 		$str = str_replace('-', ' ', $string);
 
-		// Transliterate on the language requested (fallback to current language if not specified)
-		$lang = empty($language) ? Language::getInstance() : Language::getInstance($language);
-		$str = $lang->transliterate($str);
+		$str = Language::getInstance()->transliterate($str);
 
 		// Trim white spaces at beginning and end of alias and make lowercase
 		$str = trim(StringHelper::strtolower($str));
@@ -154,16 +151,24 @@ class OutputFilter
 	 * @return  string  Processed string.
 	 *
 	 * @since   1.0
+	 * @todo    There must be a better way???
 	 */
 	public static function ampReplace($text)
 	{
-		return preg_replace('/(?<!&)&(?!&|#|[\w]+;)/', '&amp;', $text);
+		$text = str_replace('&&', '*--*', $text);
+		$text = str_replace('&#', '*-*', $text);
+		$text = str_replace('&amp;', '&', $text);
+		$text = preg_replace('|&(?![\w]+;)|', '&amp;', $text);
+		$text = str_replace('*-*', '&#', $text);
+		$text = str_replace('*--*', '&&', $text);
+
+		return $text;
 	}
 
 	/**
 	 * Cleans text of all formatting and scripting code
 	 *
-	 * @param   string  $text  Text to clean
+	 * @param   string  &$text  Text to clean
 	 *
 	 * @return  string  Cleaned text.
 	 *

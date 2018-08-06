@@ -3,7 +3,7 @@
  * @package     Joomla.Platform
  * @subpackage  Google
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -14,8 +14,7 @@ use Joomla\Registry\Registry;
 /**
  * Google Picasa data class for the Joomla Platform.
  *
- * @since       12.3
- * @deprecated  4.0  Use the `joomla/google` package via Composer instead
+ * @since  12.3
  */
 class JGoogleDataPicasaAlbum extends JGoogleData
 {
@@ -393,10 +392,10 @@ class JGoogleDataPicasaAlbum extends JGoogleData
 
 			if (!($type = $this->getMime($file)))
 			{
-				throw new RuntimeException('Inappropriate file type.');
+				throw new RuntimeException("Inappropriate file type.");
 			}
 
-			if (!($data = file_get_contents($file)))
+			if (!($data = JFile::read($file)))
 			{
 				throw new RuntimeException("Cannot access file: `$file`");
 			}

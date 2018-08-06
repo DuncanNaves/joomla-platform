@@ -3,7 +3,7 @@
  * @package     Joomla.Platform
  * @subpackage  GitHub
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -14,8 +14,7 @@ defined('JPATH_PLATFORM') or die;
  *
  * @documentation https://developer.github.com/v3/gists
  *
- * @since       11.3
- * @deprecated  4.0  Use the `joomla/github` package via Composer instead
+ * @since  11.3
  *
  * @property-read  JGithubPackageGistsComments  $comments  GitHub API object for gist comments.
  */
@@ -24,7 +23,7 @@ class JGithubPackageGists extends JGithubPackage
 	protected $name = 'Gists';
 
 	protected $packages = array(
-		'comments',
+		'comments'
 	);
 
 	/**
@@ -49,7 +48,7 @@ class JGithubPackageGists extends JGithubPackage
 			array(
 				'files' => $this->buildFileData((array) $files),
 				'public' => (bool) $public,
-				'description' => $description,
+				'description' => $description
 			)
 		);
 

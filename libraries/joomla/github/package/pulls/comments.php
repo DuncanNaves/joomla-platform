@@ -3,7 +3,7 @@
  * @package     Joomla.Platform
  * @subpackage  GitHub
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -14,8 +14,7 @@ defined('JPATH_PLATFORM') or die;
  *
  * @documentation https://developer.github.com/v3/pulls/comments/
  *
- * @since       3.3 (CMS)
- * @deprecated  4.0  Use the `joomla/github` package via Composer instead
+ * @since  3.3 (CMS)
  */
 class JGithubPackagePullsComments extends JGithubPackage
 {
@@ -46,7 +45,7 @@ class JGithubPackagePullsComments extends JGithubPackage
 				'body' => $body,
 				'commit_id' => $commitId,
 				'path' => $filePath,
-				'position' => $position,
+				'position' => $position
 			)
 		);
 
@@ -80,7 +79,7 @@ class JGithubPackagePullsComments extends JGithubPackage
 		$data = json_encode(
 			array(
 				'body' => $body,
-				'in_reply_to' => (int) $inReplyTo,
+				'in_reply_to' => (int) $inReplyTo
 			)
 		);
 
@@ -136,7 +135,7 @@ class JGithubPackagePullsComments extends JGithubPackage
 		// Build the request data.
 		$data = json_encode(
 			array(
-				'body' => $body,
+				'body' => $body
 			)
 		);
 

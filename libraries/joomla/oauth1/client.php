@@ -3,7 +3,7 @@
  * @package     Joomla.Platform
  * @subpackage  OAuth1
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -14,8 +14,7 @@ use Joomla\Registry\Registry;
 /**
  * Joomla Platform class for interacting with an OAuth 1.0 and 1.0a server.
  *
- * @since       13.1
- * @deprecated  4.0  Use the `joomla/oauth1` framework package that will be bundled instead
+ * @since  13.1
  */
 abstract class JOAuth1Client
 {
@@ -162,7 +161,7 @@ abstract class JOAuth1Client
 		if ($this->getOption('callback'))
 		{
 			$parameters = array(
-				'oauth_callback' => $this->getOption('callback'),
+				'oauth_callback' => $this->getOption('callback')
 			);
 		}
 		else
@@ -223,7 +222,7 @@ abstract class JOAuth1Client
 	{
 		// Set the parameters.
 		$parameters = array(
-			'oauth_token' => $this->token['key'],
+			'oauth_token' => $this->token['key']
 		);
 
 		if (strcmp($this->version, '1.0a') === 0)
@@ -262,7 +261,7 @@ abstract class JOAuth1Client
 			'oauth_signature_method' => 'HMAC-SHA1',
 			'oauth_version' => '1.0',
 			'oauth_nonce' => $this->generateNonce(),
-			'oauth_timestamp' => time(),
+			'oauth_timestamp' => time()
 		);
 
 		$parameters = array_merge($parameters, $defaults);
@@ -471,8 +470,8 @@ abstract class JOAuth1Client
 		$base = array(
 			$method,
 			$url,
-			$params,
-		);
+			$params
+			);
 
 		// Return the base string.
 		return implode('&', $this->safeEncode($base));

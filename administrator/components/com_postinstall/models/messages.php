@@ -3,7 +3,7 @@
  * @package     Joomla.Administrator
  * @subpackage  com_postinstall
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -37,7 +37,7 @@ class PostinstallModelMessages extends FOFModel
 
 		// Force filter only enabled messages
 		$published = $this->getState('published', 1, 'int');
-		$query->where($db->qn('enabled') . ' = ' . (int) $published);
+		$query->where($db->qn('enabled') . ' = ' . $db->q($published));
 
 		return $query;
 	}
@@ -59,7 +59,7 @@ class PostinstallModelMessages extends FOFModel
 		$query = $db->getQuery(true)
 			->select(array('name', 'element', 'client_id'))
 			->from($db->qn('#__extensions'))
-			->where($db->qn('extension_id') . ' = ' . (int) $eid);
+			->where($db->qn('extension_id') . ' = ' . $db->q((int) $eid));
 
 		$db->setQuery($query, 0, 1);
 
@@ -82,7 +82,7 @@ class PostinstallModelMessages extends FOFModel
 		$lang->load($extension->element, $basePath);
 
 		// Return the localised name
-		return JText::_(strtoupper($extension->name));
+		return JText::_($extension->name);
 	}
 
 	/**
@@ -100,30 +100,8 @@ class PostinstallModelMessages extends FOFModel
 
 		$query = $db->getQuery(true)
 			->update($db->qn('#__postinstall_messages'))
-			->set($db->qn('enabled') . ' = 1')
-			->where($db->qn('extension_id') . ' = ' . (int) $eid);
-		$db->setQuery($query);
-
-		return $db->execute();
-	}
-
-	/**
-	 * Hides all messages for an extension
-	 *
-	 * @param   integer  $eid  The extension ID whose messages we'll hide
-	 *
-	 * @return  mixed  False if we fail, a db cursor otherwise
-	 *
-	 * @since   3.8.7
-	 */
-	public function hideMessages($eid)
-	{
-		$db = $this->getDbo();
-
-		$query = $db->getQuery(true)
-			->update($db->qn('#__postinstall_messages'))
-			->set($db->qn('enabled') . ' = 0')
-			->where($db->qn('extension_id') . ' = ' . (int) $eid);
+			->set($db->qn('enabled') . ' = ' . $db->q(1))
+			->where($db->qn('extension_id') . ' = ' . $db->q($eid));
 		$db->setQuery($query);
 
 		return $db->execute();
@@ -196,7 +174,7 @@ class PostinstallModelMessages extends FOFModel
 	}
 
 	/**
-	 * Get the dropdown options for the list of component with post-installation messages
+	 * Get the drop-down options for the list of component with post-installation messages
 	 *
 	 * @since 3.4
 	 *
@@ -215,11 +193,16 @@ class PostinstallModelMessages extends FOFModel
 
 		$options = array();
 
-		JFactory::getLanguage()->load('files_joomla.sys', JPATH_SITE, null, false, false);
-
 		foreach ($extension_ids as $eid)
 		{
-			$options[] = JHtml::_('select.option', $eid, $this->getExtensionName($eid));
+			$extension_name = $this->getExtensionName($eid);
+
+			if ($extension_name == 'files_joomla')
+			{
+				$extension_name = JText::_('COM_POSTINSTALL_TITLE_JOOMLA');
+			}
+
+			$options[] = JHtml::_('select.option', $eid, $extension_name);
 		}
 
 		return $options;
@@ -247,13 +230,13 @@ class PostinstallModelMessages extends FOFModel
 	 * description_key     The JText language key for the main body (description) of this PIM
 	 *                     Example: COM_FOOBAR_POSTINSTALL_MESSAGEONE_DESCRIPTION
 	 *
-	 * action_key          The JText language key for the action button. Ignored and not required when type=message
-	 *                     Example: COM_FOOBAR_POSTINSTALL_MESSAGEONE_ACTION
+	 * action_key		   The JText language key for the action button. Ignored and not required when type=message
+	 * 					   Example: COM_FOOBAR_POSTINSTALL_MESSAGEONE_ACTION
 	 *
 	 * language_extension  The extension name which holds the language keys used above.
 	 *                     For example, com_foobar, mod_something, plg_system_whatever, tpl_mytemplate
 	 *
-	 * language_client_id  Should we load the frontend (0) or backend (1) language keys?
+	 * language_client_id  Should we load the front-end (0) or back-end (1) language keys?
 	 *
 	 * version_introduced  Which was the version of your extension where this message appeared for the first time?
 	 *                     Example: 3.2.1
@@ -442,7 +425,7 @@ class PostinstallModelMessages extends FOFModel
 		$query = $db->getQuery(true)
 			->select('*')
 			->from($db->qn($tableName))
-			->where($db->qn('extension_id') . ' = ' . (int) $options['extension_id'])
+			->where($db->qn('extension_id') . ' = ' . $db->q($options['extension_id']))
 			->where($db->qn('type') . ' = ' . $db->q($options['type']))
 			->where($db->qn('title_key') . ' = ' . $db->q($options['title_key']));
 
@@ -471,7 +454,7 @@ class PostinstallModelMessages extends FOFModel
 			// Otherwise it's not the same row. Remove the old row before insert a new one.
 			$query = $db->getQuery(true)
 				->delete($db->qn($tableName))
-				->where($db->q('extension_id') . ' = ' . (int) $options['extension_id'])
+				->where($db->q('extension_id') . ' = ' . $db->q($options['extension_id']))
 				->where($db->q('type') . ' = ' . $db->q($options['type']))
 				->where($db->q('title_key') . ' = ' . $db->q($options['title_key']));
 

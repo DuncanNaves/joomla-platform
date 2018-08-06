@@ -3,7 +3,7 @@
  * @package     Joomla.Site
  * @subpackage  com_content
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -55,19 +55,7 @@ class ContentControllerArticle extends JControllerForm
 		{
 			// Redirect to the return page.
 			$this->setRedirect($this->getReturnPage());
-
-			return;
 		}
-
-		// Redirect to the edit screen.
-		$this->setRedirect(
-			JRoute::_(
-				'index.php?option=' . $this->option . '&view=' . $this->view_item . '&a_id=0'
-				. $this->getRedirectToItemAppend(), false
-			)
-		);
-
-		return true;
 	}
 
 	/**
@@ -115,36 +103,45 @@ class ContentControllerArticle extends JControllerForm
 	protected function allowEdit($data = array(), $key = 'id')
 	{
 		$recordId = (int) isset($data[$key]) ? $data[$key] : 0;
-		$user = JFactory::getUser();
+		$user     = JFactory::getUser();
+		$userId   = $user->get('id');
+		$asset    = 'com_content.article.' . $recordId;
 
-		// Zero record (id:0), return component edit permission by calling parent controller method
-		if (!$recordId)
-		{
-			return parent::allowEdit($data, $key);
-		}
-
-		// Check edit on the record asset (explicit or inherited)
-		if ($user->authorise('core.edit', 'com_content.article.' . $recordId))
+		// Check general edit permission first.
+		if ($user->authorise('core.edit', $asset))
 		{
 			return true;
 		}
 
-		// Check edit own on the record asset (explicit or inherited)
-		if ($user->authorise('core.edit.own', 'com_content.article.' . $recordId))
+		// Fallback on edit.own.
+		// First test if the permission is available.
+		if ($user->authorise('core.edit.own', $asset))
 		{
-			// Existing record already has an owner, get it
-			$record = $this->getModel()->getItem($recordId);
+			// Now test the owner is the user.
+			$ownerId = (int) isset($data['created_by']) ? $data['created_by'] : 0;
 
-			if (empty($record))
+			if (empty($ownerId) && $recordId)
 			{
-				return false;
+				// Need to do a lookup from the model.
+				$record = $this->getModel()->getItem($recordId);
+
+				if (empty($record))
+				{
+					return false;
+				}
+
+				$ownerId = $record->created_by;
 			}
 
-			// Grant if current user is owner of the record
-			return $user->get('id') == $record->created_by;
+			// If the owner matches 'me' then do the test.
+			if ($ownerId == $userId)
+			{
+				return true;
+			}
 		}
 
-		return false;
+		// Since there is no asset tracking, revert to the component permissions.
+		return parent::allowEdit($data, $key);
 	}
 
 	/**
@@ -160,62 +157,8 @@ class ContentControllerArticle extends JControllerForm
 	{
 		parent::cancel($key);
 
-		$app = JFactory::getApplication();
-
-		// Load the parameters.
-		$params = $app->getParams();
-
-		$customCancelRedir = (bool) $params->get('custom_cancel_redirect');
-
-		if ($customCancelRedir)
-		{
-			$cancelMenuitemId = (int) $params->get('cancel_redirect_menuitem');
-
-			if ($cancelMenuitemId > 0)
-			{
-				$item = $app->getMenu()->getItem($cancelMenuitemId);
-				$lang = '';
-
-				if (JLanguageMultilang::isEnabled())
-				{
-					$lang = !is_null($item) && $item->language != '*' ? '&lang=' . $item->language : '';
-				}
-
-				// Redirect to the user specified return page.
-				$redirlink = $item->link . $lang . '&Itemid=' . $cancelMenuitemId;
-			}
-			else
-			{
-				// Redirect to the same article submission form (clean form).
-				$redirlink = $app->getMenu()->getActive()->link . '&Itemid=' . $app->getMenu()->getActive()->id;
-			}
-		}
-		else
-		{
-			$menuitemId = (int) $params->get('redirect_menuitem');
-			$lang = '';
-
-			if ($menuitemId > 0)
-			{
-				$lang = '';
-				$item = $app->getMenu()->getItem($menuitemId);
-
-				if (JLanguageMultilang::isEnabled())
-				{
-					$lang = !is_null($item) && $item->language != '*' ? '&lang=' . $item->language : '';
-				}
-
-				// Redirect to the general (redirect_menuitem) user specified return page.
-				$redirlink = $item->link . $lang . '&Itemid=' . $menuitemId;
-			}
-			else
-			{
-				// Redirect to the return page.
-				$redirlink = $this->getReturnPage();
-			}
-		}
-
-		$this->setRedirect(JRoute::_($redirlink, false));
+		// Redirect to the return page.
+		$this->setRedirect($this->getReturnPage());
 	}
 
 	/**
@@ -235,7 +178,7 @@ class ContentControllerArticle extends JControllerForm
 
 		if (!$result)
 		{
-			$this->setRedirect(JRoute::_($this->getReturnPage(), false));
+			$this->setRedirect($this->getReturnPage());
 		}
 
 		return $result;
@@ -297,7 +240,7 @@ class ContentControllerArticle extends JControllerForm
 
 		$itemId = $this->input->getInt('Itemid');
 		$return = $this->getReturnPage();
-		$catId  = $this->input->getInt('catid');
+		$catId  = $this->input->getInt('catid', null, 'get');
 
 		if ($itemId)
 		{
@@ -341,6 +284,21 @@ class ContentControllerArticle extends JControllerForm
 	}
 
 	/**
+	 * Function that allows child controller access to model data after the data has been saved.
+	 *
+	 * @param   JModelLegacy  $model      The data model object.
+	 * @param   array         $validData  The validated data.
+	 *
+	 * @return  void
+	 *
+	 * @since   1.6
+	 */
+	protected function postSaveHook(JModelLegacy $model, $validData = array())
+	{
+		return;
+	}
+
+	/**
 	 * Method to save a record.
 	 *
 	 * @param   string  $key     The name of the primary key of the URL variable.
@@ -352,56 +310,15 @@ class ContentControllerArticle extends JControllerForm
 	 */
 	public function save($key = null, $urlVar = 'a_id')
 	{
-		$result    = parent::save($key, $urlVar);
-		$app       = JFactory::getApplication();
-		$articleId = $app->input->getInt('a_id');
+		$result = parent::save($key, $urlVar);
 
-		// Load the parameters.
-		$params   = $app->getParams();
-		$menuitem = (int) $params->get('redirect_menuitem');
-
-		// Check for redirection after submission when creating a new article only
-		if ($menuitem > 0 && $articleId == 0)
+		// If ok, redirect to the return page.
+		if ($result)
 		{
-			$lang = '';
-
-			if (JLanguageMultilang::isEnabled())
-			{
-				$item = $app->getMenu()->getItem($menuitem);
-				$lang = !is_null($item) && $item->language != '*' ? '&lang=' . $item->language : '';
-			}
-
-			// If ok, redirect to the return page.
-			if ($result)
-			{
-				$this->setRedirect(JRoute::_('index.php?Itemid=' . $menuitem . $lang, false));
-			}
-		}
-		else
-		{
-			// If ok, redirect to the return page.
-			if ($result)
-			{
-				$this->setRedirect(JRoute::_($this->getReturnPage(), false));
-			}
+			$this->setRedirect($this->getReturnPage());
 		}
 
 		return $result;
-	}
-
-	/**
-	 * Method to reload a record.
-	 *
-	 * @param   string  $key     The name of the primary key of the URL variable.
-	 * @param   string  $urlVar  The name of the URL variable if different from the primary key (sometimes required to avoid router collisions).
-	 *
-	 * @return  void
-	 *
-	 * @since   3.8.0
-	 */
-	public function reload($key = null, $urlVar = 'a_id')
-	{
-		return parent::reload($key, $urlVar);
 	}
 
 	/**
@@ -414,7 +331,7 @@ class ContentControllerArticle extends JControllerForm
 	public function vote()
 	{
 		// Check for request forgeries.
-		$this->checkToken();
+		JSession::checkToken() or jexit(JText::_('JINVALID_TOKEN'));
 
 		$user_rating = $this->input->getInt('user_rating', -1);
 

@@ -3,11 +3,13 @@
  * @package     Joomla.Administrator
  * @subpackage  com_languages
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 defined('_JEXEC') or die;
+
+use Joomla\Registry\Registry;
 
 /**
  * Languages Overrides Model
@@ -21,7 +23,7 @@ class LanguagesModelOverrides extends JModelList
 	 *
 	 * @param   array  $config  An optional associative array of configuration settings.
 	 *
-	 * @since   2.5
+	 * @since		2.5
 	 */
 	public function __construct($config = array())
 	{
@@ -112,9 +114,9 @@ class LanguagesModelOverrides extends JModelList
 	/**
 	 * Method to get the total number of overrides.
 	 *
-	 * @return  integer  The total number of overrides.
+	 * @return  int	The total number of overrides.
 	 *
-	 * @since   2.5
+	 * @since		2.5
 	 */
 	public function getTotal()
 	{
@@ -145,7 +147,7 @@ class LanguagesModelOverrides extends JModelList
 	 *
 	 * @since   2.5
 	 */
-	protected function populateState($ordering = 'key', $direction = 'asc')
+	protected function populateState($ordering = null, $direction = null)
 	{
 		$app = JFactory::getApplication();
 
@@ -179,7 +181,7 @@ class LanguagesModelOverrides extends JModelList
 		$app->setUserState('com_languages.overrides.filter.language', $language);
 
 		// List state information
-		parent::populateState($ordering, $direction);
+		parent::populateState('key', 'asc');
 	}
 
 	/**
@@ -190,7 +192,7 @@ class LanguagesModelOverrides extends JModelList
 	 *
 	 * @return  array  Sorted associative array of languages.
 	 *
-	 * @since   2.5
+	 * @since		2.5
 	 */
 	public function getLanguages()
 	{
@@ -202,8 +204,8 @@ class LanguagesModelOverrides extends JModelList
 
 		// Get all languages of frontend and backend.
 		$languages       = array();
-		$site_languages  = JLanguageHelper::getKnownLanguages(JPATH_SITE);
-		$admin_languages = JLanguageHelper::getKnownLanguages(JPATH_ADMINISTRATOR);
+		$site_languages  = JLanguage::getKnownLanguages(JPATH_SITE);
+		$admin_languages = JLanguage::getKnownLanguages(JPATH_ADMINISTRATOR);
 
 		// Create a single array of them.
 		foreach ($site_languages as $tag => $language)
@@ -230,9 +232,9 @@ class LanguagesModelOverrides extends JModelList
 	 *
 	 * @param   array  $cids  Array of keys to delete.
 	 *
-	 * @return  integer  Number of successfully deleted overrides, boolean false if an error occurred.
+	 * @return  integer Number of successfully deleted overrides, boolean false if an error occurred.
 	 *
-	 * @since   2.5
+	 * @since		2.5
 	 */
 	public function delete($cids)
 	{
@@ -263,8 +265,19 @@ class LanguagesModelOverrides extends JModelList
 			}
 		}
 
-		// Write override.ini file with the strings.
-		if (JLanguageHelper::saveToIniFile($filename, $strings) === false)
+		foreach ($strings as $key => $string)
+		{
+			$strings[$key] = str_replace('"', '"_QQ_"', $string);
+		}
+
+		// Write override.ini file with the left strings.
+		$registry = new Registry;
+		$registry->loadObject($strings);
+		$reg = $registry->toString('INI');
+
+		$filename = constant('JPATH_' . $client) . '/language/overrides/' . $this->getState('filter.language') . '.override.ini';
+
+		if (!JFile::write($filename, $reg))
 		{
 			return false;
 		}
@@ -277,7 +290,7 @@ class LanguagesModelOverrides extends JModelList
 	/**
 	 * Removes all of the cached strings from the table.
 	 *
-	 * @return  boolean  result of operation
+	 * @return  boolean result of operation
 	 *
 	 * @since   3.4.2
 	 */

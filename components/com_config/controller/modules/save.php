@@ -3,7 +3,7 @@
  * @package     Joomla.Site
  * @subpackage  com_config
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -15,13 +15,13 @@ defined('_JEXEC') or die;
  * @package     Joomla.Site
  * @subpackage  com_config
  * @since       3.2
- */
+*/
 class ConfigControllerModulesSave extends JControllerBase
 {
 	/**
 	 * Method to save module editing.
 	 *
-	 * @return  boolean  True on success.
+	 * @return  bool	True on success.
 	 *
 	 * @since   3.2
 	 */
@@ -59,7 +59,7 @@ class ConfigControllerModulesSave extends JControllerBase
 			$redirect = '&return=' . $returnUri;
 		}
 
-		// Access backend com_modules to be done
+		// Access back-end com_modules to be done
 		JLoader::register('ModulesControllerModule', JPATH_ADMINISTRATOR . '/components/com_modules/controllers/module.php');
 		JLoader::register('ModulesModelModule', JPATH_ADMINISTRATOR . '/components/com_modules/models/module.php');
 
@@ -68,10 +68,10 @@ class ConfigControllerModulesSave extends JControllerBase
 		// Get a document object
 		$document = JFactory::getDocument();
 
-		// Set backend required params
+		// Set back-end required params
 		$document->setType('json');
 
-		// Execute backend controller
+		// Execute back-end controller
 		$return = $controllerClass->save();
 
 		// Reset params back after requesting from service
@@ -81,9 +81,7 @@ class ConfigControllerModulesSave extends JControllerBase
 		if ($return === false)
 		{
 			// Save the data in the session.
-			$data = $this->input->post->get('jform', array(), 'array');
-
-			$this->app->setUserState('com_config.modules.global.data', $data);
+			$app->setUserState('com_config.modules.global.data', $data);
 
 			// Save failed, go back to the screen and display a notice.
 			$this->app->enqueueMessage(JText::_('JERROR_SAVE_FAILED'));
@@ -117,7 +115,6 @@ class ConfigControllerModulesSave extends JControllerBase
 				{
 					$redirect = JUri::base();
 				}
-
 				$this->app->redirect($redirect);
 				break;
 		}

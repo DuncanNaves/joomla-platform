@@ -3,8 +3,8 @@
  * @package     Joomla.Libraries
  * @subpackage  HTML
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
+ * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
 defined('JPATH_PLATFORM') or die;
@@ -27,12 +27,19 @@ abstract class JHtmlUser
 	 */
 	public static function groups($includeSuperAdmin = false)
 	{
-		$options = array_values(JHelperUsergroups::getInstance()->getAll());
+		$db = JFactory::getDbo();
+		$query = $db->getQuery(true)
+			->select('a.id AS value, a.title AS text, COUNT(DISTINCT b.id) AS level')
+			->from($db->quoteName('#__usergroups') . ' AS a')
+			->join('LEFT', $db->quoteName('#__usergroups') . ' AS b ON a.lft > b.lft AND a.rgt < b.rgt')
+			->group('a.id, a.title, a.lft, a.rgt')
+			->order('a.lft ASC');
+		$db->setQuery($query);
+		$options = $db->loadObjectList();
 
 		for ($i = 0, $n = count($options); $i < $n; $i++)
 		{
-			$options[$i]->value = $options[$i]->id;
-			$options[$i]->text = str_repeat('- ', $options[$i]->level) . $options[$i]->title;
+			$options[$i]->text = str_repeat('- ', $options[$i]->level) . $options[$i]->text;
 			$groups[] = JHtml::_('select.option', $options[$i]->value, $options[$i]->text);
 		}
 
@@ -71,7 +78,8 @@ abstract class JHtmlUser
 			->where('a.block = 0')
 			->order('a.name');
 		$db->setQuery($query);
+		$items = $db->loadObjectList();
 
-		return $db->loadObjectList();
+		return $items;
 	}
 }

@@ -3,8 +3,8 @@
  * @package     Joomla.Libraries
  * @subpackage  HTML
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
- * @license     GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
+ * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
 defined('JPATH_PLATFORM') or die;
@@ -38,8 +38,6 @@ abstract class JHtmlBootstrap
 	 * @return  void
 	 *
 	 * @since   3.1
-	 *
-	 * @deprecated  4.0  Bootstrap 4.0 dropped this so will Joomla.
 	 */
 	public static function affix($selector = 'affix', $params = array())
 	{
@@ -48,7 +46,7 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$sig]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['offset'] = isset($params['offset']) ? $params['offset'] : 10;
@@ -85,7 +83,7 @@ abstract class JHtmlBootstrap
 		}
 
 		// Include Bootstrap framework
-		JHtml::_('bootstrap.framework');
+		static::framework();
 
 		// Attach the alerts to the document
 		JFactory::getDocument()->addScriptDeclaration(
@@ -115,7 +113,7 @@ abstract class JHtmlBootstrap
 		}
 
 		// Include Bootstrap framework
-		JHtml::_('bootstrap.framework');
+		static::framework();
 
 		// Attach the button to the document
 		JFactory::getDocument()->addScriptDeclaration(
@@ -149,7 +147,7 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$sig]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['interval'] = isset($params['interval']) ? (int) $params['interval'] : 5000;
@@ -187,7 +185,7 @@ abstract class JHtmlBootstrap
 		}
 
 		// Include Bootstrap framework
-		JHtml::_('bootstrap.framework');
+		static::framework();
 
 		// Attach the dropdown to the document
 		JFactory::getDocument()->addScriptDeclaration(
@@ -224,10 +222,11 @@ abstract class JHtmlBootstrap
 		// If no debugging value is set, use the configuration setting
 		if ($debug === null)
 		{
-			$debug = JDEBUG;
+			$config = JFactory::getConfig();
+			$debug = (boolean) $config->get('debug');
 		}
 
-		JHtml::_('script', 'jui/bootstrap.min.js', array('version' => 'auto', 'relative' => true, 'detectDebug' => $debug));
+		JHtml::_('script', 'jui/bootstrap.min.js', false, true, false, false, $debug);
 		static::$loaded[__METHOD__] = true;
 
 		return;
@@ -258,13 +257,13 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$sig]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['backdrop'] = isset($params['backdrop']) ? (boolean) $params['backdrop'] : true;
 			$opt['keyboard'] = isset($params['keyboard']) ? (boolean) $params['keyboard'] : true;
 			$opt['show']     = isset($params['show']) ? (boolean) $params['show'] : false;
-			$opt['remote']   = isset($params['remote']) ? $params['remote'] : '';
+			$opt['remote']   = isset($params['remote']) ?  $params['remote'] : '';
 
 			$options = JHtml::getJSObject($opt);
 
@@ -296,7 +295,7 @@ abstract class JHtmlBootstrap
 	 *                             - url          string   URL of a resource to be inserted as an `<iframe>` inside the modal body
 	 *                             - height       string   height of the `<iframe>` containing the remote resource
 	 *                             - width        string   width of the `<iframe>` containing the remote resource
-	 * @param   string  $body      Markup for the modal body. Appended after the `<iframe>` if the URL option is set
+	 * @param   string  $body      Markup for the modal body. Appended after the `<iframe>` if the url option is set
 	 *
 	 * @return  string  HTML markup for a modal
 	 *
@@ -305,12 +304,12 @@ abstract class JHtmlBootstrap
 	public static function renderModal($selector = 'modal', $params = array(), $body = '')
 	{
 		// Include Bootstrap framework
-		JHtml::_('bootstrap.framework');
+		static::framework();
 
 		$layoutData = array(
 			'selector' => $selector,
 			'params'   => $params,
-			'body'     => $body,
+			'body'     => $body
 		);
 
 		return JLayoutHelper::render('joomla.modal.main', $layoutData);
@@ -350,7 +349,7 @@ abstract class JHtmlBootstrap
 		}
 
 		// Include Bootstrap framework
-		JHtml::_('bootstrap.framework');
+		static::framework();
 
 		$opt['animation'] = isset($params['animation']) ? $params['animation'] : null;
 		$opt['html']      = isset($params['html']) ? $params['html'] : true;
@@ -364,13 +363,9 @@ abstract class JHtmlBootstrap
 
 		$options = JHtml::getJSObject($opt);
 
-		$initFunction = 'function initPopovers (event, container) { ' .
-				'$(container || document).find(' . json_encode($selector) . ').popover(' . $options . ');' .
-			'}';
-
 		// Attach the popover to the document
 		JFactory::getDocument()->addScriptDeclaration(
-			'jQuery(function($){ initPopovers(); $("body").on("subform-row-add", initPopovers); ' . $initFunction . ' });'
+			'jQuery(function($){ $(' . json_encode($selector) . ').popover(' . $options . '); });'
 		);
 
 		static::$loaded[__METHOD__][$selector] = true;
@@ -397,7 +392,7 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$sig]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['offset'] = isset($params['offset']) ? (int) $params['offset'] : 10;
@@ -446,7 +441,7 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$selector]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['animation'] = isset($params['animation']) ? (boolean) $params['animation'] : null;
@@ -466,7 +461,7 @@ abstract class JHtmlBootstrap
 			$options = JHtml::getJSObject($opt);
 
 			// Build the script.
-			$script = array('$(container).find(' . json_encode($selector) . ').tooltip(' . $options . ')');
+			$script = array('$(' . json_encode($selector) . ').tooltip(' . $options . ')');
 
 			if ($onShow)
 			{
@@ -488,14 +483,8 @@ abstract class JHtmlBootstrap
 				$script[] = 'on("hidden.bs.tooltip", ' . $onHidden . ')';
 			}
 
-			$initFunction = 'function initTooltips (event, container) { ' .
-				'container = container || document;' .
-				implode('.', $script) . ';' .
-				'}';
-
 			// Attach tooltips to document
-			JFactory::getDocument()
-				->addScriptDeclaration('jQuery(function($){ initTooltips(); $("body").on("subform-row-add", initTooltips); ' . $initFunction . ' });');
+			JFactory::getDocument()->addScriptDeclaration('jQuery(function($){ ' . implode('.', $script) . '; });');
 
 			// Set static array
 			static::$loaded[__METHOD__][$selector] = true;
@@ -512,15 +501,13 @@ abstract class JHtmlBootstrap
 	 * @return  void
 	 *
 	 * @since   3.6
-	 *
-	 * @deprecated  4.0 No replacement, use Bootstrap tooltips.
 	 */
 	public static function tooltipExtended($extended = true)
 	{
 		if ($extended)
 		{
-			JHtml::_('script', 'jui/bootstrap-tooltip-extended.min.js', array('version' => 'auto', 'relative' => true));
-			JHtml::_('stylesheet', 'jui/bootstrap-tooltip-extended.css', array('version' => 'auto', 'relative' => true));
+			JHtml::_('script', 'jui/bootstrap-tooltip-extended.min.js', false, true);
+			JHtml::_('stylesheet', 'jui/bootstrap-tooltip-extended.css', false, true);
 		}
 	}
 
@@ -549,15 +536,13 @@ abstract class JHtmlBootstrap
 	 * @return  void
 	 *
 	 * @since   3.0
-	 *
-	 * @deprecated  4.0  Bootstrap 4.0 dropped this so will Joomla.
 	 */
 	public static function typeahead($selector = '.typeahead', $params = array())
 	{
 		if (!isset(static::$loaded[__METHOD__][$selector]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['source']      = isset($params['source']) ? $params['source'] : null;
@@ -609,11 +594,11 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$selector]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['parent'] = isset($params['parent']) ? ($params['parent'] == true ? '#' . $selector : $params['parent']) : false;
-			$opt['toggle'] = isset($params['toggle']) ? (boolean) $params['toggle'] : !($opt['parent'] === false || isset($params['active']));
+			$opt['toggle'] = isset($params['toggle']) ? (boolean) $params['toggle'] : ($opt['parent'] === false || isset($params['active']) ? false : true);
 			$onShow = isset($params['onShow']) ? (string) $params['onShow'] : null;
 			$onShown = isset($params['onShown']) ? (string) $params['onShown'] : null;
 			$onHide = isset($params['onHide']) ? (string) $params['onHide'] : null;
@@ -646,20 +631,6 @@ abstract class JHtmlBootstrap
 			if ($onHidden)
 			{
 				$script[] = "\t.on('hidden', " . $onHidden . ")";
-			}
-
-			$parents = array_key_exists(__METHOD__, static::$loaded) ? array_filter(array_column(static::$loaded[__METHOD__], 'parent')) : array();
-
-			if ($opt['parent'] && empty($parents))
-			{
-				$script[] = "
-					$(document).on('click.collapse.data-api', '[data-toggle=collapse]', function (e) {
-						var \$this   = $(this), href
-						var parent  = \$this.attr('data-parent')
-						var \$parent = parent && $(parent)
-
-						if (\$parent) \$parent.find('[data-toggle=collapse][data-parent=' + parent + ']').not(\$this).addClass('collapsed')
-					})";
 			}
 
 			$script[] = "});";
@@ -701,14 +672,13 @@ abstract class JHtmlBootstrap
 	public static function addSlide($selector, $text, $id, $class = '')
 	{
 		$in = (static::$loaded[__CLASS__ . '::startAccordion'][$selector]['active'] == $id) ? ' in' : '';
-		$collapsed = (static::$loaded[__CLASS__ . '::startAccordion'][$selector]['active'] == $id) ? '' : ' collapsed';
 		$parent = static::$loaded[__CLASS__ . '::startAccordion'][$selector]['parent'] ?
 			' data-parent="' . static::$loaded[__CLASS__ . '::startAccordion'][$selector]['parent'] . '"' : '';
 		$class = (!empty($class)) ? ' ' . $class : '';
 
 		$html = '<div class="accordion-group' . $class . '">'
 			. '<div class="accordion-heading">'
-			. '<strong><a href="#' . $id . '" data-toggle="collapse"' . $parent . ' class="accordion-toggle' . $collapsed . '">'
+			. '<strong><a href="#' . $id . '" data-toggle="collapse"' . $parent . ' class="accordion-toggle">'
 			. $text
 			. '</a></strong>'
 			. '</div>'
@@ -747,10 +717,10 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded[__METHOD__][$sig]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
-			$opt['active'] = (isset($params['active']) && $params['active']) ? (string) $params['active'] : '';
+			$opt['active'] = (isset($params['active']) && ($params['active'])) ? (string) $params['active'] : '';
 
 			// Attach tabs to document
 			JFactory::getDocument()
@@ -792,14 +762,14 @@ abstract class JHtmlBootstrap
 		static $tabScriptLayout = null;
 		static $tabLayout = null;
 
-		$tabScriptLayout = $tabScriptLayout === null ? new JLayoutFile('libraries.cms.html.bootstrap.addtabscript') : $tabScriptLayout;
-		$tabLayout = $tabLayout === null ? new JLayoutFile('libraries.cms.html.bootstrap.addtab') : $tabLayout;
+		$tabScriptLayout = is_null($tabScriptLayout) ? new JLayoutFile('libraries.cms.html.bootstrap.addtabscript') : $tabScriptLayout;
+		$tabLayout = is_null($tabLayout) ? new JLayoutFile('libraries.cms.html.bootstrap.addtab') : $tabLayout;
 
 		$active = (static::$loaded['JHtmlBootstrap::startTabSet'][$selector]['active'] == $id) ? ' active' : '';
 
 		// Inject tab into UL
 		JFactory::getDocument()
-			->addScriptDeclaration($tabScriptLayout->render(array('selector' => $selector, 'id' => $id, 'active' => $active, 'title' => $title)));
+			->addScriptDeclaration($tabScriptLayout->render(array('selector' => $selector,'id' => $id, 'active' => $active, 'title' => $title)));
 
 		return $tabLayout->render(array('id' => $id, 'active' => $active));
 	}
@@ -834,7 +804,7 @@ abstract class JHtmlBootstrap
 		if (!isset(static::$loaded['JHtmlBootstrap::startTabSet'][$sig]))
 		{
 			// Include Bootstrap framework
-			JHtml::_('bootstrap.framework');
+			static::framework();
 
 			// Setup options object
 			$opt['active'] = isset($params['active']) ? (string) $params['active'] : '';
@@ -917,15 +887,15 @@ abstract class JHtmlBootstrap
 		// Load Bootstrap main CSS
 		if ($includeMainCss)
 		{
-			JHtml::_('stylesheet', 'jui/bootstrap.min.css', array('version' => 'auto', 'relative' => true), $attribs);
-			JHtml::_('stylesheet', 'jui/bootstrap-responsive.min.css', array('version' => 'auto', 'relative' => true), $attribs);
-			JHtml::_('stylesheet', 'jui/bootstrap-extended.css', array('version' => 'auto', 'relative' => true), $attribs);
+			JHtml::_('stylesheet', 'jui/bootstrap.min.css', $attribs, true);
+			JHtml::_('stylesheet', 'jui/bootstrap-responsive.min.css', $attribs, true);
+			JHtml::_('stylesheet', 'jui/bootstrap-extended.css', $attribs, true);
 		}
 
 		// Load Bootstrap RTL CSS
 		if ($direction === 'rtl')
 		{
-			JHtml::_('stylesheet', 'jui/bootstrap-rtl.css', array('version' => 'auto', 'relative' => true), $attribs);
+			JHtml::_('stylesheet', 'jui/bootstrap-rtl.css', $attribs, true);
 		}
 	}
 }

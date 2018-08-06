@@ -3,7 +3,7 @@
  * @package     Joomla.Platform
  * @subpackage  FileSystem
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
@@ -30,6 +30,7 @@ class JStreamString
 	protected $currentString;
 
 	/**
+	 *
 	 * The path
 	 *
 	 * @var   string
@@ -38,6 +39,7 @@ class JStreamString
 	protected $path;
 
 	/**
+	 *
 	 * The mode
 	 *
 	 * @var   string
@@ -46,17 +48,19 @@ class JStreamString
 	protected $mode;
 
 	/**
-	 * Enter description here ...
 	 *
-	 * @var    string
+	 * Enter description here ...
+	 * @var   string
+	 *
 	 * @since  12.1
 	 */
 	protected $options;
 
 	/**
-	 * Enter description here ...
 	 *
-	 * @var    string
+	 * Enter description here ...
+	 * @var   string
+	 *
 	 * @since  12.1
 	 */
 	protected $openedPath;
@@ -64,7 +68,7 @@ class JStreamString
 	/**
 	 * Current position
 	 *
-	 * @var    integer
+	 * @var   integer
 	 * @since  12.1
 	 */
 	protected $pos;
@@ -72,7 +76,8 @@ class JStreamString
 	/**
 	 * Length of the string
 	 *
-	 * @var    string
+	 * @var   string
+	 *
 	 * @since  12.1
 	 */
 	protected $len;
@@ -83,7 +88,7 @@ class JStreamString
 	 * @var    array
 	 * @since  12.1
 	 *
-	 * @link   http://us.php.net/manual/en/function.stat.php
+	 * @see    http://us.php.net/manual/en/function.stat.php
 	 */
 	protected $stat;
 
@@ -122,7 +127,7 @@ class JStreamString
 	 *
 	 * @return  array
 	 *
-	 * @link    https://secure.php.net/manual/en/streamwrapper.stream-stat.php
+	 * @see     https://secure.php.net/manual/en/streamwrapper.stream-stat.php
 	 * @since   11.1
 	 */
 	public function stream_stat()
@@ -138,7 +143,7 @@ class JStreamString
 	 *
 	 * @return  array
 	 *
-	 * @link    https://secure.php.net/manual/en/streamwrapper.url-stat.php
+	 * @see     https://secure.php.net/manual/en/streamwrapper.url-stat.php
 	 * @since   11.1
 	 */
 	public function url_stat($path, $flags = 0)
@@ -158,8 +163,7 @@ class JStreamString
 			'mtime' => $now,
 			'ctime' => $now,
 			'blksize' => '512',
-			'blocks' => ceil(strlen($string) / 512),
-		);
+			'blocks' => ceil(strlen($string) / 512));
 
 		return $stat;
 	}
@@ -175,7 +179,7 @@ class JStreamString
 	 *
 	 * @since   11.1
 	 *
-	 * @link    https://secure.php.net/manual/en/streamwrapper.stream-read.php
+	 * @see     https://secure.php.net/manual/en/streamwrapper.stream-read.php
 	 */
 	public function stream_read($count)
 	{

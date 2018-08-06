@@ -3,13 +3,11 @@
  * @package     Joomla.Administrator
  * @subpackage  com_redirect
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 defined('_JEXEC') or die;
-
-use Joomla\Utilities\ArrayHelper;
 
 /**
  * Redirect link list controller class.
@@ -21,7 +19,7 @@ class RedirectControllerLinks extends JControllerAdmin
 	/**
 	 * Method to update a record.
 	 *
-	 * @return  void
+	 * @return  void.
 	 *
 	 * @since   1.6
 	 */
@@ -43,7 +41,7 @@ class RedirectControllerLinks extends JControllerAdmin
 			// Get the model.
 			$model = $this->getModel();
 
-			$ids = ArrayHelper::toInteger($ids);
+			JArrayHelper::toInteger($ids);
 
 			// Remove the items.
 			if (!$model->activate($ids, $newUrl, $comment))
@@ -62,7 +60,7 @@ class RedirectControllerLinks extends JControllerAdmin
 	/**
 	 * Method to duplicate URLs in records.
 	 *
-	 * @return  void
+	 * @return  void.
 	 *
 	 * @since   3.6.0
 	 */
@@ -84,7 +82,7 @@ class RedirectControllerLinks extends JControllerAdmin
 			// Get the model.
 			$model = $this->getModel();
 
-			$ids = ArrayHelper::toInteger($ids);
+			JArrayHelper::toInteger($ids);
 
 			// Remove the items.
 			if (!$model->duplicateUrls($ids, $newUrl, $comment))
@@ -132,19 +130,7 @@ class RedirectControllerLinks extends JControllerAdmin
 		{
 			if (!empty($batch_urls_line))
 			{
-				$params = JComponentHelper::getParams('com_redirect');
-				$separator = $params->get('separator', '|');
-
-				// Basic check to make sure the correct separator is being used
-				if (!\Joomla\String\StringHelper::strpos($batch_urls_line, $separator))
-				{
-					$this->setMessage(JText::sprintf('COM_REDIRECT_NO_SEPARATOR_FOUND', $separator), 'error');
-					$this->setRedirect('index.php?option=com_redirect&view=links');
-
-					return false;
-				}
-
-				$batch_urls[] = array_map('trim', explode($separator, $batch_urls_line));
+				$batch_urls[] = array_map('trim', explode('|', $batch_urls_line));
 			}
 		}
 
@@ -187,4 +173,5 @@ class RedirectControllerLinks extends JControllerAdmin
 
 		$this->setRedirect('index.php?option=com_redirect&view=links', $message);
 	}
+
 }

@@ -3,7 +3,7 @@
  * @package     Joomla.Site
  * @subpackage  com_users
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -43,9 +43,15 @@ class UsersModelProfile extends JModelForm
 
 		parent::__construct($config);
 
+		// Load the Joomla! RAD layer
+		if (!defined('FOF_INCLUDED'))
+		{
+			include_once JPATH_LIBRARIES . '/fof/include.php';
+		}
+
 		// Load the helper and model used for two factor authentication
-		JLoader::register('UsersModelUser', JPATH_ADMINISTRATOR . '/components/com_users/models/user.php');
-		JLoader::register('UsersHelper', JPATH_ADMINISTRATOR . '/components/com_users/helpers/users.php');
+		require_once JPATH_ADMINISTRATOR . '/components/com_users/models/user.php';
+		require_once JPATH_ADMINISTRATOR . '/components/com_users/helpers/users.php';
 	}
 
 	/**
@@ -145,10 +151,25 @@ class UsersModelProfile extends JModelForm
 			}
 
 			// Unset the passwords.
-			unset($this->data->password1, $this->data->password2);
+			unset($this->data->password1);
+			unset($this->data->password2);
 
 			$registry           = new Registry($this->data->params);
 			$this->data->params = $registry->toArray();
+
+			// Get the dispatcher and load the users plugins.
+			$dispatcher = JEventDispatcher::getInstance();
+			JPluginHelper::importPlugin('user');
+
+			// Trigger the data preparation event.
+			$results = $dispatcher->trigger('onContentPrepareData', array('com_users.profile', $this->data));
+
+			// Check for errors encountered while preparing the data.
+			if (count($results) && in_array(false, $results, true))
+			{
+				$this->setError($dispatcher->getError());
+				$this->data = false;
+			}
 		}
 
 		return $this->data;
@@ -179,17 +200,17 @@ class UsersModelProfile extends JModelForm
 
 		// Check for username compliance and parameter set
 		$isUsernameCompliant = true;
-		$username = $loadData ? $form->getValue('username') : $this->loadFormData()->username;
 
-		if ($username)
+		if ($this->loadFormData()->username)
 		{
+			$username = $this->loadFormData()->username;
 			$isUsernameCompliant  = !(preg_match('#[<>"\'%;()&\\\\]|\\.\\./#', $username) || strlen(utf8_decode($username)) < 2
-				|| trim($username) !== $username);
+				|| trim($username) != $username);
 		}
 
 		$this->setState('user.username.compliant', $isUsernameCompliant);
 
-		if ($isUsernameCompliant && !JComponentHelper::getParams('com_users')->get('change_login_name'))
+		if (!JComponentHelper::getParams('com_users')->get('change_login_name') && $isUsernameCompliant)
 		{
 			$form->setFieldAttribute('username', 'class', '');
 			$form->setFieldAttribute('username', 'filter', '');
@@ -227,7 +248,7 @@ class UsersModelProfile extends JModelForm
 	{
 		$data = $this->getData();
 
-		$this->preprocessData('com_users.profile', $data, 'user');
+		$this->preprocessData('com_users.profile', $data);
 
 		return $data;
 	}
@@ -305,15 +326,19 @@ class UsersModelProfile extends JModelForm
 		$data['password'] = $data['password1'];
 
 		// Unset the username if it should not be overwritten
+		$username            = $data['username'];
 		$isUsernameCompliant = $this->getState('user.username.compliant');
 
-		if ($isUsernameCompliant && !JComponentHelper::getParams('com_users')->get('change_login_name'))
+		if (!JComponentHelper::getParams('com_users')->get('change_login_name') && $isUsernameCompliant)
 		{
 			unset($data['username']);
 		}
 
-		// Unset block and sendEmail so they do not get overwritten
-		unset($data['block'], $data['sendEmail']);
+		// Unset the block so it does not get overwritten
+		unset($data['block']);
+
+		// Unset the sendEmail so it does not get overwritten
+		unset($data['sendEmail']);
 
 		// Handle the two factor authentication setup
 		if (array_key_exists('twofactor', $data))
@@ -325,7 +350,7 @@ class UsersModelProfile extends JModelForm
 			// Get the current One Time Password (two factor auth) configuration
 			$otpConfig = $model->getOtpConfig($userId);
 
-			if ($twoFactorMethod !== 'none')
+			if ($twoFactorMethod != 'none')
 			{
 				// Run the plugins
 				FOFPlatform::getInstance()->importPlugin('twofactorauth');
@@ -351,7 +376,7 @@ class UsersModelProfile extends JModelForm
 				// Generate one time emergency passwords if required (depleted or not set)
 				if (empty($otpConfig->otep))
 				{
-					$model->generateOteps($userId);
+					$oteps = $model->generateOteps($userId);
 				}
 			}
 			else
@@ -380,7 +405,7 @@ class UsersModelProfile extends JModelForm
 		JPluginHelper::importPlugin('user');
 
 		// Retrieve the user groups so they don't get overwritten
-		unset($user->groups);
+		unset ($user->groups);
 		$user->groups = JAccess::getGroupsByUser($user->id, false);
 
 		// Store the data.
@@ -391,12 +416,8 @@ class UsersModelProfile extends JModelForm
 			return false;
 		}
 
-		// Some contexts may not use tags data at all, so we allow callers to disable loading tag data
-		if ($this->getState('load_tags', true))
-		{
-			$user->tags = new JHelperTags;
-			$user->tags->getTagIds($user->id, 'com_users.user');
-		}
+		$user->tags = new JHelperTags;
+		$user->tags->getTagIds($user->id, 'com_users.user');
 
 		return $user->id;
 	}

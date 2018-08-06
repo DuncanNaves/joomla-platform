@@ -3,18 +3,19 @@
  * @package     Joomla.Platform
  * @subpackage  Facebook
  *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE
  */
 
+
 defined('JPATH_PLATFORM') or die();
+
 
 /**
  * Facebook API Group class for the Joomla Platform.
  *
- * @link        http://developers.facebook.com/docs/reference/api/group/
- * @since       13.1
- * @deprecated  4.0  Use the `joomla/facebook` package via Composer instead
+ * @see    http://developers.facebook.com/docs/reference/api/group/
+ * @since  13.1
  */
 class JFacebookGroup extends JFacebookObject
 {
@@ -109,7 +110,7 @@ class JFacebookGroup extends JFacebookObject
 	 *
 	 * @param   string  $group    The group id.
 	 * @param   string  $link     Link URL.
-	 * @param   string  $message  Link message.
+	 * @param   strin   $message  Link message.
 	 *
 	 * @return  mixed   The decoded JSON response or false if the client is not authenticated.
 	 *

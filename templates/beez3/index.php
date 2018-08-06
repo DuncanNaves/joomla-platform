@@ -2,15 +2,13 @@
 /**
  * @package     Joomla.Site
  * @subpackage  Templates.beez3
- *
- * @copyright   Copyright (C) 2005 - 2018 Open Source Matters, Inc. All rights reserved.
+ * 
+ * @copyright   Copyright (C) 2005 - 2016 Open Source Matters, Inc. All rights reserved.
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
 // No direct access.
 defined('_JEXEC') or die;
-
-/** @var JDocumentHtml $this */
 
 JLoader::import('joomla.filesystem.file');
 
@@ -19,7 +17,7 @@ $showRightColumn = ($this->countModules('position-3') or $this->countModules('po
 $showbottom      = ($this->countModules('position-9') or $this->countModules('position-10') or $this->countModules('position-11'));
 $showleft        = ($this->countModules('position-4') or $this->countModules('position-7') or $this->countModules('position-5'));
 
-if ($showRightColumn === false && $showleft === false)
+if ($showRightColumn == 0 and $showleft == 0)
 {
 	$showno = 0;
 }
@@ -31,9 +29,12 @@ $color          = $this->params->get('templatecolor');
 $logo           = $this->params->get('logo');
 $navposition    = $this->params->get('navposition');
 $headerImage    = $this->params->get('headerImage');
+$app            = JFactory::getApplication();
+$templateparams = $app->getTemplate(true)->params;
 $config         = JFactory::getConfig();
-$bootstrap      = explode(',', $this->params->get('bootstrap'));
-$option         = JFactory::getApplication()->input->getCmd('option', '');
+$bootstrap      = explode(',', $templateparams->get('bootstrap'));
+$jinput         = JFactory::getApplication()->input;
+$option         = $jinput->get('option', '', 'cmd');
 
 // Output as HTML5
 $this->setHtml5(true);
@@ -44,51 +45,48 @@ if (in_array($option, $bootstrap))
 	JHtml::_('bootstrap.loadCss', true, $this->direction);
 }
 
-// Add stylesheets
-JHtml::_('stylesheet', 'templates/system/css/system.css', array('version' => 'auto'));
-JHtml::_('stylesheet', 'position.css', array('version' => 'auto', 'relative' => true));
-JHtml::_('stylesheet', 'layout.css', array('version' => 'auto', 'relative' => true));
-JHtml::_('stylesheet', 'print.css', array('version' => 'auto', 'relative' => true), array('media' => 'print'));
-JHtml::_('stylesheet', 'general.css', array('version' => 'auto', 'relative' => true));
-JHtml::_('stylesheet', htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '.css', array('version' => 'auto', 'relative' => true));
+$this->addStyleSheet($this->baseurl . '/templates/system/css/system.css');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/position.css', 'text/css', 'screen');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/layout.css', 'text/css', 'screen');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/print.css', 'text/css', 'print');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/general.css', 'text/css', 'screen');
+$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/' . htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '.css', 'text/css', 'screen');
 
-if ($this->direction === 'rtl')
+if ($this->direction == 'rtl')
 {
-	JHtml::_('stylesheet', 'template_rtl.css', array('version' => 'auto', 'relative' => true));
-	JHtml::_('stylesheet', htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '_rtl.css', array('version' => 'auto', 'relative' => true));
+	$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/template_rtl.css');
+	if (file_exists(JPATH_SITE . '/templates/' . $this->template . '/css/' . htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '_rtl.css'))
+	{
+		$this->addStyleSheet($this->baseurl . '/templates/' . $this->template . '/css/' . htmlspecialchars($color, ENT_COMPAT, 'UTF-8') . '_rtl.css');
+	}
 }
 
-if ($color === 'image')
+if ($color == 'image')
 {
 	$this->addStyleDeclaration("
 	.logoheader {
 		background: url('" . $this->baseurl . "/" . htmlspecialchars($headerImage) . "') no-repeat right;
 	}
 	body {
-		background: " . $this->params->get('backgroundcolor') . ";
+		background: " . $templateparams->get('backgroundcolor') . ";
 	}");
 }
 
-JHtml::_('stylesheet', 'ie7only.css', array('version' => 'auto', 'relative' => true, 'conditional' => 'IE 7'));
-
 // Check for a custom CSS file
-JHtml::_('stylesheet', 'user.css', array('version' => 'auto', 'relative' => true));
+$userCss = JPATH_SITE . '/templates/' . $this->template . '/css/user.css';
+
+if (file_exists($userCss) && filesize($userCss) > 0)
+{
+	$this->addStyleSheetVersion($this->baseurl . '/templates/' . $this->template . '/css/user.css');
+}
 
 JHtml::_('bootstrap.framework');
-
-// Add template scripts
-JHtml::_('script', 'templates/' . $this->template . '/javascript/md_stylechanger.js', array('version' => 'auto'));
-JHtml::_('script', 'templates/' . $this->template . '/javascript/hide.js', array('version' => 'auto'));
-JHtml::_('script', 'templates/' . $this->template . '/javascript/respond.src.js', array('version' => 'auto'));
-JHtml::_('script', 'templates/' . $this->template . '/javascript/template.js', array('version' => 'auto'));
-
-// Check for a custom js file
-JHtml::_('script', 'templates/' . $this->template . '/javascript/user.js', array('version' => 'auto'));
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/md_stylechanger.js');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/hide.js');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/respond.src.js');
+$this->addScript($this->baseurl . '/templates/' . $this->template . '/javascript/template.js');
 
 require __DIR__ . '/jsstrings.php';
-
-// Add html5 shiv
-JHtml::_('script', 'jui/html5.js', array('version' => 'auto', 'relative' => true, 'conditional' => 'lt IE 9'));
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $this->language; ?>" dir="<?php echo $this->direction; ?>">
@@ -97,6 +95,8 @@ JHtml::_('script', 'jui/html5.js', array('version' => 'auto', 'relative' => true
 		<meta name="HandheldFriendly" content="true" />
 		<meta name="apple-mobile-web-app-capable" content="YES" />
 		<jdoc:include type="head" />
+		<!--[if IE 7]><link href="<?php echo $this->baseurl; ?>/templates/<?php echo $this->template; ?>/css/ie7only.css" rel="stylesheet" /><![endif]-->
+		<!--[if lt IE 9]><script src="<?php echo JUri::root(true); ?>/media/jui/js/html5.js"></script><![endif]-->
 	</head>
 	<body id="shadow">
 		<div id="all">
@@ -105,15 +105,15 @@ JHtml::_('script', 'jui/html5.js', array('version' => 'auto', 'relative' => true
 					<div class="logoheader">
 						<h1 id="logo">
 						<?php if ($logo) : ?>
-							<img src="<?php echo $this->baseurl; ?>/<?php echo htmlspecialchars($logo); ?>"  alt="<?php echo htmlspecialchars($this->params->get('sitetitle')); ?>" />
+							<img src="<?php echo $this->baseurl; ?>/<?php echo htmlspecialchars($logo); ?>"  alt="<?php echo htmlspecialchars($templateparams->get('sitetitle')); ?>" />
 						<?php endif;?>
-						<?php if (!$logo AND $this->params->get('sitetitle')) : ?>
-							<?php echo htmlspecialchars($this->params->get('sitetitle')); ?>
+						<?php if (!$logo AND $templateparams->get('sitetitle')) : ?>
+							<?php echo htmlspecialchars($templateparams->get('sitetitle')); ?>
 						<?php elseif (!$logo AND $config->get('sitename')) : ?>
 							<?php echo htmlspecialchars($config->get('sitename')); ?>
 						<?php endif; ?>
 						<span class="header1">
-						<?php echo htmlspecialchars($this->params->get('sitedescription')); ?>
+						<?php echo htmlspecialchars($templateparams->get('sitedescription')); ?>
 						</span></h1>
 					</div><!-- end logoheader -->
 					<ul class="skiplinks">
@@ -137,7 +137,7 @@ JHtml::_('script', 'jui/html5.js', array('version' => 'auto', 'relative' => true
 						<jdoc:include type="modules" name="position-2" />
 					</div>
 
-					<?php if ($navposition === 'left' and $showleft) : ?>
+					<?php if ($navposition == 'left' and $showleft) : ?>
 						<nav class="left1 <?php if ($showRightColumn == null) { echo 'leftbigger';} ?>" id="nav">
 							<jdoc:include type="modules" name="position-7" style="beezDivision" headerLevel="3" />
 							<jdoc:include type="modules" name="position-4" style="beezHide" headerLevel="3" state="0 " />
@@ -177,7 +177,7 @@ JHtml::_('script', 'jui/html5.js', array('version' => 'auto', 'relative' => true
 						</aside><!-- end right -->
 					<?php endif; ?>
 
-					<?php if ($navposition === 'center' and $showleft) : ?>
+					<?php if ($navposition == 'center' and $showleft) : ?>
 						<nav class="left <?php if ($showRightColumn == null) { echo 'leftbigger'; } ?>" id="nav" >
 
 							<jdoc:include type="modules" name="position-7"  style="beezDivision" headerLevel="3" />
